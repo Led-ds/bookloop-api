@@ -1,0 +1,6 @@
+package com.bookloop.book.domain;
+
+public enum Genre {
+    FICCAO, NAO_FICCAO, FANTASIA, ROMANCE, SUSPENSE, TERROR,
+    BIOGRAFIA, TECNICO, INFANTOJUVENIL, HISTORIA, AUTOAJUDA, OUTRO
+}
