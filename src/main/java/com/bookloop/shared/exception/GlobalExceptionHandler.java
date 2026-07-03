@@ -1,6 +1,7 @@
 package com.bookloop.shared.exception;
 
 import com.bookloop.shared.application.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,6 +20,7 @@ import java.util.Map;
  * Centralized translation of exceptions into the ApiResponse envelope.
  * Keeps controllers free of try/catch noise.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -68,7 +70,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
-        // In production this is logged with the structured logger; message stays generic to the client.
+        // Loga a causa real (com stack trace) no CloudWatch; cliente recebe mensagem generica.
+        log.error("Erro inesperado ao processar requisicao: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Ocorreu um erro inesperado."));
     }
