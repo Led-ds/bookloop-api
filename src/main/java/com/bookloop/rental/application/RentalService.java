@@ -13,6 +13,7 @@ import com.bookloop.shared.exception.ResourceNotFoundException;
 import com.bookloop.user.domain.User;
 import com.bookloop.user.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RentalService {
@@ -40,6 +42,8 @@ public class RentalService {
         Rental rental = Rental.request(book, renter, book.getOwner(), req.message(),
                 req.startDate(), req.endDate(), req.termAccepted(), req.signerName());
         rentalRepository.save(rental);
+        log.info("Aluguel solicitado: rentalId={} bookId={} renterId={}",
+                rental.getId(), book.getId(), renterId);
         return rentalMapper.toResponse(rental);
     }
 
@@ -47,6 +51,7 @@ public class RentalService {
     public RentalResponse approve(UUID ownerId, UUID rentalId) {
         Rental rental = loadAsOwner(ownerId, rentalId);
         rental.approve();
+        log.info("Aluguel aprovado: rentalId={} ownerId={}", rentalId, ownerId);
         events.publishEvent(new BookRentedEvent(
                 rental.getId(), rental.getBook().getId(),
                 rental.getRenter().getId(), rental.getOwner().getId()));
@@ -85,6 +90,7 @@ public class RentalService {
         if (wasLate) {
             rental.getRenter().addPenalty();
         }
+        log.info("Aluguel devolvido: rentalId={} wasLate={}", rentalId, wasLate);
         events.publishEvent(new BookReturnedEvent(
                 rental.getId(), rental.getBook().getId(), rental.getRenter().getId(), wasLate));
         return rentalMapper.toResponse(rental);
