@@ -7,6 +7,7 @@ import com.bookloop.shared.exception.ResourceNotFoundException;
 import com.bookloop.user.domain.User;
 import com.bookloop.user.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class BookService {
 
@@ -49,7 +51,9 @@ public class BookService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", ownerId));
         Book book = Book.create(req.title(), req.author(), req.isbn(), req.genre(),
                 req.description(), req.condition(), req.coverUrl(), req.isPublic(), owner);
-        return bookMapper.toResponse(bookRepository.save(book));
+        Book saved = bookRepository.save(book);
+        log.info("Livro cadastrado: bookId={} ownerId={}", saved.getId(), ownerId);
+        return bookMapper.toResponse(saved);
     }
 
     @Transactional

@@ -38,6 +38,20 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+app:
+  cors:
+    # Origens permitidas (CORS). Sobrescreva em produção via APP_CORS_ALLOWED_ORIGINS.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,https://kehmmmut47.us-east-1.awsapprunner.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health      # expõe apenas /actuator/health
+  endpoint:
+    health:
+      show-details: never    # não vaza detalhes de componentes ao público
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

@@ -24,6 +24,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -34,6 +37,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtFilter;
     private final AppUserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
+
+    /** Origens permitidas para CORS, externalizadas (APP_CORS_ALLOWED_ORIGINS). */
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
 
     private static final String[] PUBLIC = {
             "/api/v1/auth/**",
@@ -101,7 +108,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsSource() {
         var config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://kehmmmut47.us-east-1.awsapprunner.com"));
+        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim).filter(s -> !s.isBlank()).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

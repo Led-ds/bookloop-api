@@ -1,6 +1,7 @@
 package com.bookloop.shared.exception;
 
 import com.bookloop.shared.application.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,6 +67,13 @@ public class GlobalExceptionHandler {
         // Ex.: valor de enum inválido em query param (?genre=XPTO) ou corpo JSON malformado.
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Requisição inválida: verifique os valores enviados."));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        // Violações de @Validated em parâmetros de path/query (ex.: @Min/@Size em @RequestParam).
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Parâmetros inválidos na requisição."));
     }
 
     @ExceptionHandler(Exception.class)
