@@ -112,3 +112,44 @@ Transições válidas: `PENDING→APPROVED/REJECTED/CANCELLED`, `APPROVED→ACTI
   `averageRating` nulo enquanto não há avaliações), `featuredBooks` (públicos, disponíveis, com capa),
   `communityBooks` (públicos recentes), `recentActivities` (derivadas de livros recentes),
   `bookOfTheWeek`, e `reviews`/`topReaders` vazios (sem domínio de avaliação/ranking ainda).
+## Sistema de notificações v1
+
+Notificações internas **persistidas e consultáveis via REST** — sem WebSocket/SSE/filas/e-mail
+nesta etapa (preparado para evoluir).
+
+### Como é gerado
+
+O fluxo de aluguel publica **Domain Events** (`ApplicationEventPublisher`); um listener no módulo
+de notificações consome esses eventos e cria a notificação. O `RentalService` não conhece
+notificações — só publica eventos.
+
+| Evento | Notifica | Mensagem |
+|--------|----------|----------|
+| `RentalRequestedEvent` | dono | "{leitor} solicitou o empréstimo de {livro}." |
+| `BookRentedEvent` (aprovação) | leitor | "{dono} aprovou seu empréstimo de {livro}." |
+| `RentalRejectedEvent` | leitor | "{dono} recusou sua solicitação de {livro}." |
+| `BookReturnedEvent` | dono | "{livro} foi devolvido." |
+
+### Endpoints (todos exigem autenticação)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/v1/notifications` | Minhas notificações (paginado, `createdAt` desc) |
+| GET | `/api/v1/notifications/unread` | Minhas não lidas |
+| GET | `/api/v1/notifications/unread/count` | Contagem de não lidas |
+| PATCH | `/api/v1/notifications/{id}/read` | Marcar uma como lida |
+| PATCH | `/api/v1/notifications/read-all` | Marcar todas como lidas |
+
+Um usuário só acessa e marca **suas próprias** notificações (403 caso contrário).
+
+### Banco
+
+Migration `V3__notifications.sql` cria a tabela `notifications` com índices em
+`recipient_user_id`, `is_read`, `created_at` e o composto `(recipient_user_id, is_read)`.
+
+### Evolução futura (SSE/WebSocket)
+
+O listener hoje roda na mesma transação do evento. Para tempo real e desacoplamento total,
+o próximo passo é `@TransactionalEventListener(AFTER_COMMIT)` + um transporte (SSE ou WebSocket/STOMP),
+mantendo a persistência atual como fonte de verdade. Filas externas (SNS/SQS/EventBridge) e e-mail
+ficam para uma etapa posterior.
