@@ -101,7 +101,18 @@ public class Book extends BaseEntity {
         return status == BookStatus.AVAILABLE && isPublic;
     }
 
-    /** Called by the rental flow when a request is approved. */
+    /** Aprovação reserva o livro (aguardando retirada). */
+    public void markReserved() {
+        if (status == BookStatus.RENTED) {
+            throw new BusinessException("Este livro já está alugado.");
+        }
+        if (status == BookStatus.RESERVED) {
+            throw new BusinessException("Este livro já está reservado.");
+        }
+        this.status = BookStatus.RESERVED;
+    }
+
+    /** Retirada física efetiva o empréstimo. */
     public void markRented() {
         if (status == BookStatus.RENTED) {
             throw new BusinessException("Este livro já está alugado.");
@@ -114,10 +125,15 @@ public class Book extends BaseEntity {
         this.status = BookStatus.AVAILABLE;
     }
 
-    public void changeVisibility(boolean unavailable) {
+    public void changeVisibility(boolean hidden) {
         if (status == BookStatus.RENTED) {
             throw new BusinessException("Não é possível alterar a visibilidade de um livro alugado.");
         }
-        this.status = unavailable ? BookStatus.UNAVAILABLE : BookStatus.AVAILABLE;
+        this.isPublic = !hidden;
+    }
+
+    /** Livro RENTED não pode ter atributos críticos editados. */
+    public boolean isRented() {
+        return status == BookStatus.RENTED;
     }
 }

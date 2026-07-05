@@ -62,6 +62,7 @@ public class RentalService {
     public RentalResponse reject(UUID ownerId, UUID rentalId) {
         Rental rental = loadAsOwner(ownerId, rentalId);
         rental.reject();
+        log.info("Aluguel rejeitado: rentalId={} ownerId={}", rentalId, ownerId);
         return rentalMapper.toResponse(rental);
     }
 
@@ -69,6 +70,7 @@ public class RentalService {
     public RentalResponse activate(UUID ownerId, UUID rentalId) {
         Rental rental = loadAsOwner(ownerId, rentalId);
         rental.activate();
+        log.info("Aluguel ativado (retirada): rentalId={} ownerId={}", rentalId, ownerId);
         return rentalMapper.toResponse(rental);
     }
 
@@ -76,6 +78,7 @@ public class RentalService {
     public RentalResponse cancel(UUID renterId, UUID rentalId) {
         Rental rental = loadAsRenter(renterId, rentalId);
         rental.cancel();
+        log.info("Aluguel cancelado: rentalId={} renterId={}", rentalId, renterId);
         return rentalMapper.toResponse(rental);
     }
 

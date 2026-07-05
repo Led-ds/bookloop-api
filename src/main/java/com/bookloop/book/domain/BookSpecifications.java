@@ -13,9 +13,22 @@ public final class BookSpecifications {
 
     /** Only books that are publicly visible in the catalog. */
     public static Specification<Book> publiclyVisible() {
+        return (root, q, cb) -> cb.isTrue(root.get("isPublic"));
+    }
+
+
+    /** Público, visível e disponível para solicitação. */
+    public static Specification<Book> availableInCatalog() {
         return (root, q, cb) -> cb.and(
                 cb.isTrue(root.get("isPublic")),
-                cb.notEqual(root.get("status"), BookStatus.UNAVAILABLE));
+                cb.equal(root.get("status"), BookStatus.AVAILABLE));
+    }
+
+    /** Possui capa (coverUrl não nulo/naovazio). */
+    public static Specification<Book> hasCover() {
+        return (root, q, cb) -> cb.and(
+                cb.isNotNull(root.get("coverUrl")),
+                cb.notEqual(root.get("coverUrl"), ""));
     }
 
     public static Specification<Book> titleOrAuthorContains(String term) {

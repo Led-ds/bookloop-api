@@ -1,5 +1,6 @@
 package com.bookloop.user.application;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record UserResponse(
@@ -8,7 +9,14 @@ public record UserResponse(
         String email,
         String avatarUrl,
         String bio,
-        String location,
+        String city,
+        String state,
+        String addressLine,
+        String neighborhood,
+        String postalCode,
+        boolean profileCompleted,
         int penaltiesCount,
-        String role
+        String role,
+        Instant createdAt,
+        Instant updatedAt
 ) {}
