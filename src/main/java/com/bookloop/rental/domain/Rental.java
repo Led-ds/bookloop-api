@@ -112,7 +112,7 @@ public class Rental extends BaseEntity {
     public void approve() {
         requireStatus(RentalStatus.PENDING, "Apenas solicitações pendentes podem ser aprovadas.");
         this.status = RentalStatus.APPROVED;
-        book.markRented();
+        book.markReserved();
     }
 
     public void reject() {
@@ -129,13 +129,14 @@ public class Rental extends BaseEntity {
     public void activate() {
         requireStatus(RentalStatus.APPROVED, "O aluguel precisa estar aprovado para ser ativado.");
         this.status = RentalStatus.ACTIVE;
+        book.markRented();
     }
 
     public boolean returnBook() {
-        if (status != RentalStatus.ACTIVE && status != RentalStatus.LATE) {
+        if (status != RentalStatus.ACTIVE && status != RentalStatus.OVERDUE) {
             throw new BusinessException("Apenas aluguéis ativos podem ser devolvidos.");
         }
-        boolean wasLate = status == RentalStatus.LATE || LocalDate.now().isAfter(endDate);
+        boolean wasLate = status == RentalStatus.OVERDUE || LocalDate.now().isAfter(endDate);
         this.returnDate = LocalDate.now();
         this.status = RentalStatus.RETURNED;
         book.markReturned();
@@ -144,14 +145,14 @@ public class Rental extends BaseEntity {
 
     /** Renewal extends the return date but is itself subject to owner approval. */
     public void renewUntil(LocalDate newEndDate) {
-        if (status != RentalStatus.ACTIVE && status != RentalStatus.LATE) {
+        if (status != RentalStatus.ACTIVE && status != RentalStatus.OVERDUE) {
             throw new BusinessException("Apenas aluguéis ativos podem ser renovados.");
         }
         if (!newEndDate.isAfter(endDate)) {
             throw new BusinessException("A nova data deve ser posterior à data atual de devolução.");
         }
         this.endDate = newEndDate;
-        if (status == RentalStatus.LATE) {
+        if (status == RentalStatus.OVERDUE) {
             this.status = RentalStatus.ACTIVE;
         }
     }
@@ -159,7 +160,7 @@ public class Rental extends BaseEntity {
     /** Idempotent overdue detection, run by a scheduled sweep or on read. */
     public void markLateIfOverdue() {
         if (status == RentalStatus.ACTIVE && LocalDate.now().isAfter(endDate)) {
-            this.status = RentalStatus.LATE;
+            this.status = RentalStatus.OVERDUE;
         }
     }
 

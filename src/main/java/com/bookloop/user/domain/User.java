@@ -42,6 +42,24 @@ public class User extends BaseEntity {
     @Column(length = 120)
     private String location;
 
+    @Column(length = 80)
+    private String city;
+
+    @Column(length = 40)
+    private String state;
+
+    @Column(name = "address_line", length = 160)
+    private String addressLine;
+
+    @Column(length = 80)
+    private String neighborhood;
+
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
+    @Column(name = "profile_completed", nullable = false)
+    private boolean profileCompleted = false;
+
     /** Cumulative count of confirmed penalties (late returns, damage, etc.). */
     @Column(name = "penalties_count", nullable = false)
     private int penaltiesCount = 0;
@@ -64,11 +82,27 @@ public class User extends BaseEntity {
         return new User(name, email, passwordHash);
     }
 
-    public void updateProfile(String name, String bio, String location, String avatarUrl) {
+    public void updateProfile(String name, String bio, String city, String state,
+                              String addressLine, String neighborhood, String postalCode,
+                              String avatarUrl) {
         if (name != null && !name.isBlank()) this.name = name;
         this.bio = bio;
-        this.location = location;
+        this.city = city;
+        this.state = state;
+        this.addressLine = addressLine;
+        this.neighborhood = neighborhood;
+        this.postalCode = postalCode;
         this.avatarUrl = avatarUrl;
+        this.profileCompleted = computeProfileCompleted();
+    }
+
+    /** Perfil "completo" = tem bio, cidade e estado preenchidos (regra simples inicial). */
+    private boolean computeProfileCompleted() {
+        return notBlank(bio) && notBlank(city) && notBlank(state);
+    }
+
+    private static boolean notBlank(String s) {
+        return s != null && !s.isBlank();
     }
 
     public void addPenalty() {

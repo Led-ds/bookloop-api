@@ -63,3 +63,52 @@ docker run -p 8080:8080 \
 mvn clean compile
 mvn test
 ```
+
+---
+
+## Domínio v1.2 — status, perfil, Home pública e edição de livros
+
+### Status de livro (`BookStatus`)
+
+| Status | Significado |
+|--------|-------------|
+| `AVAILABLE` | Disponível para solicitação. |
+| `RESERVED` | Solicitação aprovada, aguardando retirada. |
+| `RENTED` | Em posse do leitor. |
+
+Visibilidade é controlada **à parte** por `isPublic` (não é mais um status). Ciclo: cadastro →
+`AVAILABLE`; aprovação → `RESERVED`; retirada → `RENTED`; devolução → `AVAILABLE`.
+
+### Status de aluguel (`RentalStatus`)
+
+| Status | Significado |
+|--------|-------------|
+| `PENDING` | Aguardando resposta do dono. |
+| `APPROVED` | Aprovado, aguardando retirada. |
+| `ACTIVE` | Empréstimo em andamento. |
+| `RETURNED` | Devolvido (final). |
+| `OVERDUE` | Atrasado (era `LATE`; renomeado). |
+| `REJECTED` | Recusado (final). |
+| `CANCELLED` | Cancelado pelo leitor antes da aprovação. |
+
+Transições válidas: `PENDING→APPROVED/REJECTED/CANCELLED`, `APPROVED→ACTIVE`, `ACTIVE→RETURNED/OVERDUE`,
+`OVERDUE→RETURNED` (e `OVERDUE→ACTIVE` ao renovar). Transições inválidas são bloqueadas no domínio.
+
+### Perfil do usuário
+
+- `GET /api/v1/users/me` — dados do usuário autenticado (nunca retorna hash de senha).
+- `PUT /api/v1/users/me` — atualiza o próprio perfil: `name`, `bio`, `city`, `state`, `addressLine`,
+  `neighborhood`, `postalCode`, `avatarUrl` (URL http(s) validada). `email` não é alterado aqui.
+  `profileCompleted` é derivado (bio + cidade + estado preenchidos).
+
+### Edição de livros
+
+- `PUT /api/v1/books/{id}` — **apenas o dono** (403 caso contrário; 404 se não existir).
+- Bloqueada quando o livro está `RENTED`. `coverUrl` é validado como URL http(s).
+
+### Home pública
+
+- `GET /api/v1/public/home` — **sem autenticação**. Retorna `stats` (totais + `availableBooks`;
+  `averageRating` nulo enquanto não há avaliações), `featuredBooks` (públicos, disponíveis, com capa),
+  `communityBooks` (públicos recentes), `recentActivities` (derivadas de livros recentes),
+  `bookOfTheWeek`, e `reviews`/`topReaders` vazios (sem domínio de avaliação/ranking ainda).

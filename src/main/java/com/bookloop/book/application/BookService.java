@@ -2,6 +2,7 @@ package com.bookloop.book.application;
 
 import com.bookloop.book.domain.*;
 import com.bookloop.shared.application.PageResponse;
+import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.shared.exception.ForbiddenOperationException;
 import com.bookloop.shared.exception.ResourceNotFoundException;
 import com.bookloop.user.domain.User;
@@ -59,8 +60,13 @@ public class BookService {
     @Transactional
     public BookResponse update(UUID ownerId, UUID bookId, UpdateBookRequest req) {
         Book book = loadOwned(ownerId, bookId);
+        if (book.isRented()) {
+            log.info("Edição bloqueada (livro alugado): bookId={} ownerId={}", bookId, ownerId);
+            throw new BusinessException("Não é possível editar um livro que está alugado.");
+        }
         book.update(req.title(), req.author(), req.isbn(), req.genre(),
                 req.description(), req.condition(), req.coverUrl(), req.isPublic());
+        log.info("Livro atualizado: bookId={} ownerId={}", bookId, ownerId);
         return bookMapper.toResponse(book);
     }
 

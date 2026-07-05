@@ -4,6 +4,7 @@ import com.bookloop.book.domain.BookCondition;
 import com.bookloop.book.domain.Genre;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateBookRequest(
@@ -13,6 +14,6 @@ public record CreateBookRequest(
         @NotNull Genre genre,
         @Size(max = 2000) String description,
         @NotNull BookCondition condition,
-        String coverUrl,
+        @Pattern(regexp = "^$|^https?://.*", message = "coverUrl deve ser uma URL http(s)") String coverUrl,
         boolean isPublic
 ) {}
