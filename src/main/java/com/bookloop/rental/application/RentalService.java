@@ -7,6 +7,8 @@ import com.bookloop.rental.domain.RentalRepository;
 import com.bookloop.rental.domain.RentalStatus;
 import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
+import com.bookloop.rental.domain.events.RentalRejectedEvent;
+import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import com.bookloop.shared.application.PageResponse;
 import com.bookloop.shared.exception.ForbiddenOperationException;
 import com.bookloop.shared.exception.ResourceNotFoundException;
@@ -44,6 +46,8 @@ public class RentalService {
         rentalRepository.save(rental);
         log.info("Aluguel solicitado: rentalId={} bookId={} renterId={}",
                 rental.getId(), book.getId(), renterId);
+        events.publishEvent(new RentalRequestedEvent(
+                rental.getId(), book.getId(), renterId, book.getOwner().getId()));
         return rentalMapper.toResponse(rental);
     }
 
@@ -63,6 +67,8 @@ public class RentalService {
         Rental rental = loadAsOwner(ownerId, rentalId);
         rental.reject();
         log.info("Aluguel rejeitado: rentalId={} ownerId={}", rentalId, ownerId);
+        events.publishEvent(new RentalRejectedEvent(
+                rental.getId(), rental.getBook().getId(), rental.getRenter().getId(), ownerId));
         return rentalMapper.toResponse(rental);
     }
 
