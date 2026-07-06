@@ -71,6 +71,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    @jakarta.persistence.Column(name = "rating_avg", nullable = false)
+    private double ratingAvg = 0d;
+
+    @jakarta.persistence.Column(name = "rating_count", nullable = false)
+    private int ratingCount = 0;
+
     private User(String name, String email, String passwordHash) {
         this.name = name;
         this.email = email;
@@ -112,5 +118,11 @@ public class User extends BaseEntity {
     /** Business rule: heavily penalized users are blocked from new rentals. */
     public boolean canRequestRentals() {
         return active && penaltiesCount < 3;
+    }
+
+    /** Atualiza a reputação denormalizada (média + contagem) a partir do serviço de avaliações. */
+    public void applyRating(double avg, long count) {
+        this.ratingAvg = avg;
+        this.ratingCount = (int) count;
     }
 }

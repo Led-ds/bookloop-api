@@ -153,3 +153,35 @@ O listener hoje roda na mesma transação do evento. Para tempo real e desacopla
 o próximo passo é `@TransactionalEventListener(AFTER_COMMIT)` + um transporte (SSE ou WebSocket/STOMP),
 mantendo a persistência atual como fonte de verdade. Filas externas (SNS/SQS/EventBridge) e e-mail
 ficam para uma etapa posterior.
+
+## Avaliações (reviews) v1
+
+Confiança relacional: leitores avaliam **livros** e **pessoas** após um aluguel devolvido.
+
+### Regras
+
+- Só é possível avaliar quando o aluguel está **`RETURNED`**.
+- **Livro:** avaliado por quem alugou (o leitor). **Pessoa:** cada contraparte avalia a outra
+  (leitor↔dono). Sem **auto-avaliação**.
+- **1 avaliação por aluguel por direção** (índices únicos parciais no banco).
+- Nota **1..5** + comentário de **até 150 caracteres** (opcional).
+- Média **denormalizada** por livro e por usuário (`rating_avg`/`rating_count`), recalculada a cada avaliação.
+
+### Endpoints
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| POST | `/api/v1/reviews` | JWT | Cria avaliação (`type` = `BOOK`/`USER`) |
+| GET | `/api/v1/reviews/pending` | JWT | Aluguéis devolvidos com algo ainda a avaliar |
+| GET | `/api/v1/public/books/{id}/reviews` | Público | Avaliações de um livro |
+| GET | `/api/v1/public/users/{id}/reviews` | Público | Avaliações recebidas por uma pessoa |
+
+A Home pública (`/api/v1/public/home`) passa a trazer `reviews` (mural "Vozes da comunidade"),
+`topReaders` (reputação) e `stats.averageRating` reais.
+
+### Banco
+
+`V6__reviews.sql` cria a tabela `reviews` (com `CHECK` de nota 1..5, coerência de alvo por tipo e
+bloqueio de auto-avaliação) e adiciona `rating_avg`/`rating_count` a `books` e `users`.
+`V7__demo_reviews_seed.sql` popula perfis, aluguéis devolvidos e avaliações de exemplo — para a
+vitrine já nascer com conteúdo real (substitui o mock que ficava no frontend).

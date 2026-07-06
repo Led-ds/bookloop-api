@@ -63,6 +63,12 @@ public class Book extends BaseEntity {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
+    @Column(name = "rating_avg", nullable = false)
+    private double ratingAvg = 0d;
+
+    @Column(name = "rating_count", nullable = false)
+    private int ratingCount = 0;
+
     private Book(String title, String author, String isbn, Genre genre, String description,
                  BookCondition condition, String coverUrl, boolean isPublic, User owner) {
         this.title = title;
@@ -135,5 +141,11 @@ public class Book extends BaseEntity {
     /** Livro RENTED não pode ter atributos críticos editados. */
     public boolean isRented() {
         return status == BookStatus.RENTED;
+    }
+
+    /** Atualiza a média denormalizada a partir do recálculo no serviço de avaliações. */
+    public void applyRating(double avg, long count) {
+        this.ratingAvg = avg;
+        this.ratingCount = (int) count;
     }
 }

@@ -1,6 +1,8 @@
 package com.bookloop.home.application;
 
 import com.bookloop.book.application.BookSummaryResponse;
+import com.bookloop.review.application.ReviewResponse;
+import com.bookloop.review.application.TopReaderResponse;
 
 import java.util.List;
 
@@ -9,7 +11,7 @@ public record PublicHomeResponse(
         List<BookSummaryResponse> featuredBooks,
         List<BookSummaryResponse> communityBooks,
         List<RecentActivityResponse> recentActivities,
-        List<Object> reviews,        // vazio: sem domínio de avaliação ainda
-        List<Object> topReaders,     // vazio: sem ranking ainda
+        List<ReviewResponse> reviews,
+        List<TopReaderResponse> topReaders,
         BookSummaryResponse bookOfTheWeek
 ) {}
