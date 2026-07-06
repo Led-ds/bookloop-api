@@ -16,6 +16,8 @@ public record UserResponse(
         String postalCode,
         boolean profileCompleted,
         int penaltiesCount,
+        double ratingAvg,
+        int ratingCount,
         String role,
         Instant createdAt,
         Instant updatedAt

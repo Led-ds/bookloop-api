@@ -11,5 +11,7 @@ public record BookSummaryResponse(
         String condition,
         String coverUrl,
         String status,
-        String ownerName
+        String ownerName,
+        double ratingAvg,
+        int ratingCount
 ) {}
