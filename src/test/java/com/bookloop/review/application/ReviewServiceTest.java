@@ -14,7 +14,6 @@ import com.bookloop.user.domain.User;
 import com.bookloop.user.domain.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -27,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,27 +40,32 @@ class ReviewServiceTest {
     @Mock private UserRepository userRepository;
 
     private final ReviewMapper reviewMapper = new ReviewMapper();
-    private ReviewService service;
 
     private final UUID renterId = UUID.randomUUID();
     private final UUID ownerId = UUID.randomUUID();
     private final UUID bookId = UUID.randomUUID();
+
+    // Referenciados por variável nos testes — nunca via getter de mock dentro de thenReturn().
+    private User renter;
+    private User owner;
+    private Book book;
 
     private ReviewService service() {
         return new ReviewService(reviewRepository, rentalRepository, bookRepository, userRepository, reviewMapper);
     }
 
     private Rental returnedRental() {
-        Rental rental = org.mockito.Mockito.mock(Rental.class);
-        User renter = org.mockito.Mockito.mock(User.class);
-        User owner = org.mockito.Mockito.mock(User.class);
-        Book book = org.mockito.Mockito.mock(Book.class);
+        renter = mock(User.class);
+        owner = mock(User.class);
+        book = mock(Book.class);
         lenient().when(renter.getId()).thenReturn(renterId);
         lenient().when(renter.getName()).thenReturn("Leitor");
         lenient().when(owner.getId()).thenReturn(ownerId);
         lenient().when(owner.getName()).thenReturn("Dono");
         lenient().when(book.getId()).thenReturn(bookId);
         lenient().when(book.getTitle()).thenReturn("O Hobbit");
+
+        Rental rental = mock(Rental.class);
         lenient().when(rental.getStatus()).thenReturn(RentalStatus.RETURNED);
         lenient().when(rental.getRenter()).thenReturn(renter);
         lenient().when(rental.getOwner()).thenReturn(owner);
@@ -73,7 +78,7 @@ class ReviewServiceTest {
 
     @Test
     void cannotReviewWhenRentalNotReturned() {
-        Rental rental = org.mockito.Mockito.mock(Rental.class);
+        Rental rental = mock(Rental.class);
         when(rental.getStatus()).thenReturn(RentalStatus.ACTIVE);
         when(rentalRepository.findById(any())).thenReturn(Optional.of(rental));
         var req = new CreateReviewRequest(UUID.randomUUID(), ReviewType.BOOK, null, 5, "bom");
@@ -93,7 +98,6 @@ class ReviewServiceTest {
     void onlyRenterCanReviewBook() {
         Rental rental = returnedRental();
         when(rentalRepository.findById(any())).thenReturn(Optional.of(rental));
-        User owner = rental.getOwner();
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
         var req = new CreateReviewRequest(UUID.randomUUID(), ReviewType.BOOK, null, 5, "bom");
         assertThrows(ForbiddenOperationException.class, () -> service().create(ownerId, req));
@@ -103,7 +107,7 @@ class ReviewServiceTest {
     void duplicateBookReviewIsRejected() {
         Rental rental = returnedRental();
         when(rentalRepository.findById(any())).thenReturn(Optional.of(rental));
-        when(userRepository.findById(renterId)).thenReturn(Optional.of(rental.getRenter()));
+        when(userRepository.findById(renterId)).thenReturn(Optional.of(renter));
         when(reviewRepository.existsByRentalIdAndAuthorIdAndReviewType(any(), any(), any()))
                 .thenReturn(true);
         var req = new CreateReviewRequest(UUID.randomUUID(), ReviewType.BOOK, null, 5, "bom");
@@ -114,7 +118,7 @@ class ReviewServiceTest {
     void renterReviewsBookHappyPath() {
         Rental rental = returnedRental();
         when(rentalRepository.findById(any())).thenReturn(Optional.of(rental));
-        when(userRepository.findById(renterId)).thenReturn(Optional.of(rental.getRenter()));
+        when(userRepository.findById(renterId)).thenReturn(Optional.of(renter));
         when(reviewRepository.existsByRentalIdAndAuthorIdAndReviewType(any(), any(), any()))
                 .thenReturn(false);
         when(reviewRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -127,15 +131,15 @@ class ReviewServiceTest {
         assertEquals(5, resp.rating());
         assertEquals("BOOK", resp.targetType());
         verify(reviewRepository).save(any(Review.class));
-        verify(bookRepository).save(rental.getBook());
+        verify(bookRepository).save(book);
     }
 
     @Test
     void userReviewMustTargetCounterpart() {
         Rental rental = returnedRental();
         when(rentalRepository.findById(any())).thenReturn(Optional.of(rental));
-        when(userRepository.findById(renterId)).thenReturn(Optional.of(rental.getRenter()));
-        // renter tenta avaliar a si mesmo em vez do dono
+        when(userRepository.findById(renterId)).thenReturn(Optional.of(renter));
+        // leitor tenta avaliar a si mesmo em vez do dono
         var req = new CreateReviewRequest(UUID.randomUUID(), ReviewType.USER, renterId, 5, "eu");
         assertThrows(BusinessException.class, () -> service().create(renterId, req));
     }
