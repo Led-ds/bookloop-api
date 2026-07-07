@@ -8,6 +8,8 @@ import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
 import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
 import com.bookloop.rental.domain.events.ReturnRequestedEvent;
+import com.bookloop.rental.domain.events.RenewalRequestedEvent;
+import com.bookloop.rental.domain.events.RenewalResolvedEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,5 +91,26 @@ public class NotificationEventListener {
                     "RENTAL", r.getId(), "/app/lendings");
         });
     }
+    @EventListener
+    public void onRenewalRequested(RenewalRequestedEvent e) {
+        rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOwner().getId(), r.getRenter().getId(), NotificationType.RENEWAL_REQUESTED,
+                "Pedido de renovação",
+                r.getRenter().getName() + " pediu para renovar " + r.getBook().getTitle()
+                        + " até " + e.newEndDate() + ". Aprove ou rejeite.",
+                "RENTAL", r.getId(), "/app/lendings"));
+    }
+
+    @EventListener
+    public void onRenewalResolved(RenewalResolvedEvent e) {
+        rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENEWAL_UPDATED,
+                e.approved() ? "Renovação aprovada" : "Renovação rejeitada",
+                e.approved()
+                        ? "Sua renovação de " + r.getBook().getTitle() + " foi aprovada. Nova data: " + e.newEndDate() + "."
+                        : "Sua renovação de " + r.getBook().getTitle() + " foi rejeitada pelo dono.",
+                "RENTAL", r.getId(), "/app/rentals"));
+    }
 }
+
 

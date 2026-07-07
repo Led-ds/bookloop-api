@@ -21,5 +21,7 @@ public record RentalResponse(
         boolean termAccepted,
         Instant termSignedAt,
         String termSignerName,
+        String renewalStatus,
+        LocalDate renewalRequestedUntil,
         Instant createdAt
 ) {}

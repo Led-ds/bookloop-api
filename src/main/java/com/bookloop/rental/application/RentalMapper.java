@@ -15,5 +15,6 @@ public interface RentalMapper {
     @Mapping(target = "ownerId", expression = "java(r.getOwner().getId())")
     @Mapping(target = "ownerName", expression = "java(r.getOwner().getName())")
     @Mapping(target = "status", expression = "java(r.getStatus().name())")
+    @Mapping(target = "renewalStatus", expression = "java(r.getRenewalStatus() != null ? r.getRenewalStatus().name() : null)")
     RentalResponse toResponse(Rental r);
 }

@@ -63,6 +63,13 @@ public class Rental extends BaseEntity {
     @Column(nullable = false, length = 20)
     private RentalStatus status = RentalStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "renewal_status", length = 15)
+    private RenewalStatus renewalStatus;
+
+    @Column(name = "renewal_requested_until")
+    private LocalDate renewalRequestedUntil;
+
     // --- Assinatura digital simples do Termo de Responsabilidade ---
     @Column(name = "term_accepted", nullable = false)
     private boolean termAccepted;
@@ -145,6 +152,35 @@ public class Rental extends BaseEntity {
         requireStatus(RentalStatus.APPROVED, "O aluguel precisa estar aprovado para ser ativado.");
         this.status = RentalStatus.ACTIVE;
         book.markRented();
+    }
+
+    /** Leitor solicita renovação propondo uma nova data (aguarda aprovação do dono). */
+    public void requestRenewal(LocalDate newEndDate) {
+        if (status != RentalStatus.ACTIVE && status != RentalStatus.OVERDUE) {
+            throw new BusinessException("Apenas aluguéis ativos podem ser renovados.");
+        }
+        if (!newEndDate.isAfter(endDate)) {
+            throw new BusinessException("A nova data deve ser posterior à data atual de devolução.");
+        }
+        this.renewalStatus = RenewalStatus.REQUESTED;
+        this.renewalRequestedUntil = newEndDate;
+    }
+
+    /** Dono aprova a renovação pendente: estende a data e limpa o pedido. */
+    public void approveRenewal() {
+        if (renewalStatus != RenewalStatus.REQUESTED) {
+            throw new BusinessException("Não há renovação pendente para aprovar.");
+        }
+        renewUntil(renewalRequestedUntil);
+        this.renewalStatus = RenewalStatus.APPROVED;
+    }
+
+    /** Dono rejeita a renovação pendente. */
+    public void rejectRenewal() {
+        if (renewalStatus != RenewalStatus.REQUESTED) {
+            throw new BusinessException("Não há renovação pendente para rejeitar.");
+        }
+        this.renewalStatus = RenewalStatus.REJECTED;
     }
 
     /** Leitor sinaliza a devolução; aguarda a confirmação do dono (handshake). */
