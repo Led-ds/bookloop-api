@@ -88,6 +88,23 @@ public class ReviewService {
         return reviewMapper.toResponse(review);
     }
 
+    @Transactional
+    public ReviewResponse update(UUID authorId, UUID reviewId, int rating, String comment) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Avaliação", reviewId));
+        if (!review.getAuthor().getId().equals(authorId)) {
+            throw new ForbiddenOperationException("Você só pode editar as suas próprias avaliações.");
+        }
+        review.edit(rating, comment);
+        // Recalcula a média denormalizada do alvo (livro ou pessoa).
+        if (review.getReviewType() == ReviewType.BOOK) {
+            recalcBook(review.getTargetBook());
+        } else {
+            recalcUser(review.getTargetUser());
+        }
+        return reviewMapper.toResponse(review);
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<ReviewResponse> bookReviews(UUID bookId, Pageable pageable) {
         return PageResponse.from(

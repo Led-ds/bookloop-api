@@ -24,6 +24,7 @@ public class ReviewMapper {
                 r.getReviewType().name(),
                 targetId,
                 targetName,
+                r.isEdited(),
                 r.getCreatedAt());
     }
 }

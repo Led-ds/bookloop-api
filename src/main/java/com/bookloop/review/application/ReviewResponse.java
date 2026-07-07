@@ -13,5 +13,6 @@ public record ReviewResponse(
         String targetType,
         UUID targetId,
         String targetName,
+        boolean edited,
         Instant createdAt
 ) {}
