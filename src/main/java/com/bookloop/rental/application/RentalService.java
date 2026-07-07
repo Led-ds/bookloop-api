@@ -9,6 +9,8 @@ import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
 import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
+import com.bookloop.rental.domain.events.RenewalRequestedEvent;
+import com.bookloop.rental.domain.events.RenewalResolvedEvent;
 import com.bookloop.rental.domain.events.ReturnRequestedEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import com.bookloop.shared.application.PageResponse;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +43,7 @@ public class RentalService {
     private final UserRepository userRepository;
     private final RentalMapper rentalMapper;
     private final ApplicationEventPublisher events;
+    private final ReservationQueuePort reservationQueuePort;
 
     /** Estados que ocupam o livro: não pode haver dois simultâneos para o mesmo livro. */
     private static final java.util.List<RentalStatus> ACTIVE_STATUSES =
@@ -113,6 +117,45 @@ public class RentalService {
         Rental rental = loadAsRenter(renterId, rentalId);
         rental.cancel();
         log.info("Aluguel cancelado: rentalId={} renterId={}", rentalId, renterId);
+        return rentalMapper.toResponse(rental);
+    }
+
+    @Transactional
+    public RentalResponse requestRenewal(UUID renterId, UUID rentalId, LocalDate newEndDate) {
+        Rental rental = loadAsRenter(renterId, rentalId);
+        // Regra de negócio: não renova se há gente na fila de reserva do livro.
+        if (reservationQueuePort.hasActiveQueue(rental.getBook().getId())) {
+            throw new ConflictException(
+                    "Não é possível renovar: há pessoas na fila de reserva deste livro.",
+                    "RENEWAL_BLOCKED_BY_QUEUE");
+        }
+        rental.requestRenewal(newEndDate);
+        log.info("Renovação solicitada: rentalId={} até={}", rentalId, newEndDate);
+        events.publishEvent(new RenewalRequestedEvent(
+                rental.getId(), rental.getBook().getId(),
+                rental.getRenter().getId(), rental.getOwner().getId(), newEndDate));
+        return rentalMapper.toResponse(rental);
+    }
+
+    @Transactional
+    public RentalResponse approveRenewal(UUID ownerId, UUID rentalId) {
+        Rental rental = loadAsOwner(ownerId, rentalId);
+        rental.approveRenewal();
+        log.info("Renovação aprovada: rentalId={} novaData={}", rentalId, rental.getEndDate());
+        events.publishEvent(new RenewalResolvedEvent(
+                rental.getId(), rental.getBook().getId(),
+                rental.getRenter().getId(), rental.getOwner().getId(), true, rental.getEndDate()));
+        return rentalMapper.toResponse(rental);
+    }
+
+    @Transactional
+    public RentalResponse rejectRenewal(UUID ownerId, UUID rentalId) {
+        Rental rental = loadAsOwner(ownerId, rentalId);
+        rental.rejectRenewal();
+        log.info("Renovação rejeitada: rentalId={}", rentalId);
+        events.publishEvent(new RenewalResolvedEvent(
+                rental.getId(), rental.getBook().getId(),
+                rental.getRenter().getId(), rental.getOwner().getId(), false, rental.getEndDate()));
         return rentalMapper.toResponse(rental);
     }
 

@@ -94,4 +94,23 @@ public class RentalController {
     public ApiResponse<RentalResponse> renew(@PathVariable UUID id, @Valid @RequestBody RenewRentalRequest req) {
         return ApiResponse.ok(rentalService.renew(CurrentUser.id(), id, req), "Aluguel renovado.");
     }
+
+    @Operation(summary = "Solicitar renovação propondo nova data (leitor)")
+    @PostMapping("/{id}/renewal-request")
+    public ApiResponse<RentalResponse> renewalRequest(@PathVariable UUID id, @Valid @RequestBody RenewRentalRequest req) {
+        return ApiResponse.ok(rentalService.requestRenewal(CurrentUser.id(), id, req.newEndDate()),
+                "Renovação solicitada. Aguardando o dono aprovar.");
+    }
+
+    @Operation(summary = "Aprovar renovação solicitada (dono)")
+    @PostMapping("/{id}/renewal-approve")
+    public ApiResponse<RentalResponse> renewalApprove(@PathVariable UUID id) {
+        return ApiResponse.ok(rentalService.approveRenewal(CurrentUser.id(), id), "Renovação aprovada.");
+    }
+
+    @Operation(summary = "Rejeitar renovação solicitada (dono)")
+    @PostMapping("/{id}/renewal-reject")
+    public ApiResponse<RentalResponse> renewalReject(@PathVariable UUID id) {
+        return ApiResponse.ok(rentalService.rejectRenewal(CurrentUser.id(), id), "Renovação rejeitada.");
+    }
 }
