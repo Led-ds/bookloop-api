@@ -43,9 +43,18 @@ class BookStatusTest {
     }
 
     @Test
-    void cannotReserveTwice() {
+    void reserveIsIdempotent() {
         Book b = newBook();
         b.markReserved();
+        b.markReserved();   // idempotente: reservar de novo é no-op (fluxo reserva->oferta->aprovação)
+        assertEquals(BookStatus.RESERVED, b.getStatus());
+    }
+
+    @Test
+    void cannotReserveRentedBook() {
+        Book b = newBook();
+        b.markReserved();
+        b.markRented();
         assertThrows(BusinessException.class, b::markReserved);
     }
 
