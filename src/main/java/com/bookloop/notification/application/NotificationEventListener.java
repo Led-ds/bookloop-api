@@ -7,6 +7,7 @@ import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
 import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
+import com.bookloop.rental.domain.events.ReturnRequestedEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,9 +57,19 @@ public class NotificationEventListener {
     @EventListener
     public void onRentalReturned(BookReturnedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENTAL_RETURNED,
+                "Devolução confirmada",
+                r.getBook().getTitle() + " foi confirmado como devolvido.",
+                "RENTAL", r.getId(), "/app/rentals"));
+    }
+
+    @EventListener
+    public void onReturnRequested(ReturnRequestedEvent e) {
+        rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
                 r.getOwner().getId(), r.getRenter().getId(), NotificationType.RENTAL_RETURNED,
-                "Livro devolvido",
-                r.getBook().getTitle() + " foi devolvido.",
+                "Devolução aguardando confirmação",
+                r.getRenter().getName() + " marcou a devolução de " + r.getBook().getTitle()
+                        + ". Confirme o recebimento.",
                 "RENTAL", r.getId(), "/app/lendings"));
     }
     @EventListener

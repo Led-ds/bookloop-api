@@ -9,6 +9,7 @@ import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
 import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
+import com.bookloop.rental.domain.events.ReturnRequestedEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import com.bookloop.shared.application.PageResponse;
 import com.bookloop.shared.exception.ForbiddenOperationException;
@@ -42,7 +43,7 @@ public class RentalService {
 
     /** Estados que ocupam o livro: não pode haver dois simultâneos para o mesmo livro. */
     private static final java.util.List<RentalStatus> ACTIVE_STATUSES =
-            java.util.List.of(RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.ACTIVE);
+            java.util.List.of(RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.ACTIVE, RentalStatus.RETURN_REQUESTED);
 
     /** Janela para o dono responder a uma solicitação antes de ela ser encerrada. */
     private static final long REQUEST_TTL_HOURS = 48;
@@ -112,6 +113,31 @@ public class RentalService {
         Rental rental = loadAsRenter(renterId, rentalId);
         rental.cancel();
         log.info("Aluguel cancelado: rentalId={} renterId={}", rentalId, renterId);
+        return rentalMapper.toResponse(rental);
+    }
+
+    @Transactional
+    @Transactional
+    public RentalResponse requestReturn(UUID renterId, UUID rentalId) {
+        Rental rental = loadAsRenter(renterId, rentalId);
+        rental.requestReturn();
+        log.info("Devolução solicitada pelo leitor: rentalId={} renterId={}", rentalId, renterId);
+        events.publishEvent(new ReturnRequestedEvent(
+                rental.getId(), rental.getBook().getId(),
+                rental.getRenter().getId(), rental.getOwner().getId()));
+        return rentalMapper.toResponse(rental);
+    }
+
+    @Transactional
+    public RentalResponse confirmReturn(UUID ownerId, UUID rentalId) {
+        Rental rental = loadAsOwner(ownerId, rentalId);
+        boolean wasLate = rental.confirmReturn();
+        if (wasLate) {
+            rental.getRenter().addPenalty();
+        }
+        log.info("Devolução confirmada pelo dono: rentalId={} wasLate={}", rentalId, wasLate);
+        events.publishEvent(new BookReturnedEvent(
+                rental.getId(), rental.getBook().getId(), rental.getRenter().getId(), wasLate));
         return rentalMapper.toResponse(rental);
     }
 
