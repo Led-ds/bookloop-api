@@ -116,9 +116,8 @@ public class Book extends BaseEntity {
         if (status == BookStatus.RENTED) {
             throw new BusinessException("Este livro já está alugado.");
         }
-        if (status == BookStatus.RESERVED) {
-            throw new BusinessException("Este livro já está reservado.");
-        }
+        // Idempotente: reservar um livro já reservado é no-op (necessário para o fluxo
+        // de reserva -> oferta -> aprovação do dono, em que o livro já está RESERVED).
         this.status = BookStatus.RESERVED;
     }
 
