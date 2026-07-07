@@ -7,6 +7,20 @@ spring:
     username: ${DB_USER:bookloop}
     password: ${DB_PASSWORD:bookloop}
 
+  # SMTP genérico (Gmail/Brevo/SendGrid/SES-SMTP...). Configure via env em produção.
+  # Só cria o JavaMailSender quando MAIL_HOST está definido.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   jpa:
     hibernate:
       ddl-auto: validate   # schema is owned by Flyway, never by Hibernate
@@ -59,3 +73,9 @@ logging:
   level:
     com.bookloop: INFO
     org.springframework.security: WARN
+
+bookloop:
+  mail:
+    # Liga/desliga o envio real. Em dev fica false (a app roda sem SMTP).
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:BookLoop <no-reply@bookloop.app>}
