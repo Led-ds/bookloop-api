@@ -147,6 +147,26 @@ public class Rental extends BaseEntity {
         book.markRented();
     }
 
+    /** Leitor sinaliza a devolução; aguarda a confirmação do dono (handshake). */
+    public void requestReturn() {
+        if (status != RentalStatus.ACTIVE && status != RentalStatus.OVERDUE) {
+            throw new BusinessException("Apenas aluguéis ativos podem ser devolvidos.");
+        }
+        this.status = RentalStatus.RETURN_REQUESTED;
+    }
+
+    /** Dono confirma o recebimento: encerra o aluguel e libera o livro. */
+    public boolean confirmReturn() {
+        if (status != RentalStatus.RETURN_REQUESTED) {
+            throw new BusinessException("Não há devolução pendente de confirmação para este aluguel.");
+        }
+        boolean wasLate = LocalDate.now().isAfter(endDate);
+        this.returnDate = LocalDate.now();
+        this.status = RentalStatus.RETURNED;
+        book.markReturned();
+        return wasLate;
+    }
+
     public boolean returnBook() {
         if (status != RentalStatus.ACTIVE && status != RentalStatus.OVERDUE) {
             throw new BusinessException("Apenas aluguéis ativos podem ser devolvidos.");

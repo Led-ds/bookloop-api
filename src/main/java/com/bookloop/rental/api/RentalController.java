@@ -70,7 +70,20 @@ public class RentalController {
         return ApiResponse.ok(rentalService.cancel(CurrentUser.id(), id), "Solicitação cancelada.");
     }
 
-    @Operation(summary = "Registrar devolução (dono ou leitor)")
+    @Operation(summary = "Marcar devolução (leitor) — aguarda confirmação do dono")
+    @PostMapping("/{id}/return-request")
+    public ApiResponse<RentalResponse> returnRequest(@PathVariable UUID id) {
+        return ApiResponse.ok(rentalService.requestReturn(CurrentUser.id(), id),
+                "Devolução registrada. Aguardando o dono confirmar o recebimento.");
+    }
+
+    @Operation(summary = "Confirmar recebimento (dono) — conclui a devolução")
+    @PostMapping("/{id}/return-confirm")
+    public ApiResponse<RentalResponse> returnConfirm(@PathVariable UUID id) {
+        return ApiResponse.ok(rentalService.confirmReturn(CurrentUser.id(), id), "Recebimento confirmado.");
+    }
+
+    @Operation(summary = "Registrar devolução direto (dono) — atalho sem handshake")
     @PostMapping("/{id}/return")
     public ApiResponse<RentalResponse> returnBook(@PathVariable UUID id) {
         return ApiResponse.ok(rentalService.returnBook(CurrentUser.id(), id), "Devolução registrada.");
