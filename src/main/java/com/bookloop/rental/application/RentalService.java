@@ -117,7 +117,6 @@ public class RentalService {
     }
 
     @Transactional
-    @Transactional
     public RentalResponse requestReturn(UUID renterId, UUID rentalId) {
         Rental rental = loadAsRenter(renterId, rentalId);
         rental.requestReturn();
