@@ -8,6 +8,7 @@ import com.bookloop.rental.domain.RentalStatus;
 import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
+import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import com.bookloop.shared.application.PageResponse;
 import com.bookloop.shared.exception.ForbiddenOperationException;
@@ -23,6 +24,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -39,6 +43,9 @@ public class RentalService {
     /** Estados que ocupam o livro: não pode haver dois simultâneos para o mesmo livro. */
     private static final java.util.List<RentalStatus> ACTIVE_STATUSES =
             java.util.List.of(RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.ACTIVE);
+
+    /** Janela para o dono responder a uma solicitação antes de ela ser encerrada. */
+    private static final long REQUEST_TTL_HOURS = 48;
 
     @Transactional
     public RentalResponse request(UUID renterId, CreateRentalRequest req) {
@@ -180,4 +187,23 @@ public class RentalService {
         }
         return rental;
     }
+    /**
+     * Vigia por tempo (item 4b): encerra solicitações PENDING que o dono não
+     * respondeu no prazo. Publica RentalRequestExpiredEvent, que os listeners
+     * traduzem em notificações (solicitante e dono) e na liberação/oferta do livro.
+     */
+    @Transactional
+    public void expireStalePendingRequests() {
+        Instant cutoff = Instant.now().minus(REQUEST_TTL_HOURS, ChronoUnit.HOURS);
+        List<Rental> stale = rentalRepository.findByStatusAndCreatedAtBefore(RentalStatus.PENDING, cutoff);
+        for (Rental r : stale) {
+            r.expireRequest();
+            events.publishEvent(new RentalRequestExpiredEvent(
+                    r.getId(), r.getBook().getId(), r.getRenter().getId(), r.getOwner().getId()));
+        }
+        if (!stale.isEmpty()) {
+            log.info("Solicitações PENDING expiradas por inatividade: {}", stale.size());
+        }
+    }
 }
+

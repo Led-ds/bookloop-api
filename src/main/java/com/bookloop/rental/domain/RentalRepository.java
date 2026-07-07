@@ -12,6 +12,8 @@ public interface RentalRepository extends JpaRepository<Rental, UUID> {
     Page<Rental> findByOwnerId(UUID ownerId, Pageable pageable);
     boolean existsByBookIdAndStatusIn(UUID bookId, java.util.Collection<RentalStatus> statuses);
 
+    java.util.List<Rental> findByStatusAndCreatedAtBefore(RentalStatus status, java.time.Instant cutoff);
+
     @Query("select r from Rental r where r.status = com.bookloop.rental.domain.RentalStatus.RETURNED "
             + "and (r.renter.id = :userId or r.owner.id = :userId) order by r.updatedAt desc")
     java.util.List<Rental> findReturnedInvolving(UUID userId);
