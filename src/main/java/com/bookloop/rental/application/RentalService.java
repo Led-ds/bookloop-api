@@ -11,12 +11,14 @@ import com.bookloop.rental.domain.events.RentalRejectedEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import com.bookloop.shared.application.PageResponse;
 import com.bookloop.shared.exception.ForbiddenOperationException;
+import com.bookloop.shared.exception.ConflictException;
 import com.bookloop.shared.exception.ResourceNotFoundException;
 import com.bookloop.user.domain.User;
 import com.bookloop.user.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,10 @@ public class RentalService {
     private final RentalMapper rentalMapper;
     private final ApplicationEventPublisher events;
 
+    /** Estados que ocupam o livro: não pode haver dois simultâneos para o mesmo livro. */
+    private static final java.util.List<RentalStatus> ACTIVE_STATUSES =
+            java.util.List.of(RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.ACTIVE);
+
     @Transactional
     public RentalResponse request(UUID renterId, CreateRentalRequest req) {
         Book book = bookRepository.findById(req.bookId())
@@ -41,9 +47,23 @@ public class RentalService {
         User renter = userRepository.findById(renterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", renterId));
 
+        // Concorrência (item 6): no máximo 1 aluguel ativo por livro.
+        // (a) rejeição amigável antes do insert, para o caso comum.
+        if (rentalRepository.existsByBookIdAndStatusIn(book.getId(), ACTIVE_STATUSES)) {
+            throw new ConflictException(
+                    "Este livro já foi reservado por outra pessoa.", "BOOK_ALREADY_RESERVED");
+        }
+
         Rental rental = Rental.request(book, renter, book.getOwner(), req.message(),
                 req.startDate(), req.endDate(), req.termAccepted(), req.signerName());
-        rentalRepository.save(rental);
+        try {
+            // saveAndFlush força a checagem do índice único agora (dentro do try);
+            // (b) o índice único parcial é a garantia final contra a corrida verdadeira.
+            rentalRepository.saveAndFlush(rental);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException(
+                    "Este livro já foi reservado por outra pessoa.", "BOOK_ALREADY_RESERVED");
+        }
         log.info("Aluguel solicitado: rentalId={} bookId={} renterId={}",
                 rental.getId(), book.getId(), renterId);
         events.publishEvent(new RentalRequestedEvent(
