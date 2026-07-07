@@ -75,10 +75,15 @@ public class Rental extends BaseEntity {
 
     private Rental(Book book, User renter, User owner, String message,
                    LocalDate startDate, LocalDate endDate, String signerName) {
+        this(book, renter, owner, message, startDate, endDate, signerName, false);
+    }
+
+    private Rental(Book book, User renter, User owner, String message,
+                   LocalDate startDate, LocalDate endDate, String signerName, boolean fromReservation) {
         if (book.isOwnedBy(renter.getId())) {
             throw new BusinessException("Você não pode alugar o seu próprio livro.");
         }
-        if (!book.isAvailable()) {
+        if (!fromReservation && !book.isAvailable()) {
             throw new BusinessException("Este livro não está disponível para aluguel.");
         }
         if (endDate.isBefore(startDate)) {
@@ -107,6 +112,16 @@ public class Rental extends BaseEntity {
             throw new BusinessException("É necessário aceitar o Termo de Responsabilidade.");
         }
         return new Rental(book, renter, owner, message, startDate, endDate, signerName);
+    }
+
+    /**
+     * Aluguel originado de uma reserva aceita: o livro já está segurado (RESERVED)
+     * desde a oferta, então pula a checagem de disponibilidade. Fica PENDING para o
+     * dono aprovar (opção B).
+     */
+    public static Rental fromReservation(Book book, User renter, User owner,
+                                         LocalDate startDate, LocalDate endDate, String signerName) {
+        return new Rental(book, renter, owner, null, startDate, endDate, signerName, true);
     }
 
     public void approve() {
