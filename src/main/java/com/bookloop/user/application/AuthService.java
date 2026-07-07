@@ -5,8 +5,10 @@ import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.shared.exception.ResourceNotFoundException;
 import com.bookloop.user.domain.User;
 import com.bookloop.user.domain.UserRepository;
+import com.bookloop.user.domain.events.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +26,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public AuthResponse register(RegisterRequest req) {
@@ -34,6 +37,7 @@ public class AuthService {
         User user = User.register(req.name(), req.email(), passwordEncoder.encode(req.password()));
         userRepository.save(user);
         log.info("Novo usuário registrado: email={}", user.getEmail());
+        events.publishEvent(new UserRegisteredEvent(user.getId(), user.getEmail(), user.getName()));
         return issueTokens(user);
     }
 
