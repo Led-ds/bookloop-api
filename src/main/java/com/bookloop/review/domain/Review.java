@@ -59,6 +59,22 @@ public class Review extends BaseEntity {
     @Column(length = MAX_COMMENT)
     private String comment;
 
+    @Column(nullable = false)
+    private boolean edited = false;
+
+    /** Edição pelo autor: atualiza nota/comentário e marca como editada. */
+    public void edit(int rating, String comment) {
+        if (rating < 1 || rating > 5) {
+            throw new BusinessException("A nota deve ser entre 1 e 5 estrelas.");
+        }
+        if (comment != null && comment.length() > MAX_COMMENT) {
+            throw new BusinessException("O comentário deve ter no máximo " + MAX_COMMENT + " caracteres.");
+        }
+        this.rating = rating;
+        this.comment = comment;
+        this.edited = true;
+    }
+
     private Review(Rental rental, User author, ReviewType type,
                    Book targetBook, User targetUser, int rating, String comment) {
         if (rating < 1 || rating > 5) {
