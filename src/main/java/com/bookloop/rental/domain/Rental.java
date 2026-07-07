@@ -187,6 +187,12 @@ public class Rental extends BaseEntity {
         return renter.getId().equals(userId);
     }
 
+    /** Encerra uma solicitação pendente não respondida pelo dono (vigia por tempo). */
+    public void expireRequest() {
+        requireStatus(RentalStatus.PENDING, "Apenas solicitações pendentes podem expirar.");
+        this.status = RentalStatus.CANCELLED;
+    }
+
     private void requireStatus(RentalStatus expected, String error) {
         if (this.status != expected) {
             throw new BusinessException(error);

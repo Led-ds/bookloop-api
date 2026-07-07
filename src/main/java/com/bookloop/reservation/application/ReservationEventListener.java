@@ -2,6 +2,7 @@ package com.bookloop.reservation.application;
 
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
+import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
 import com.bookloop.book.domain.BookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,4 +31,9 @@ public class ReservationEventListener {
     public void onRentalRejected(RentalRejectedEvent e) {
         bookRepository.findById(e.bookId()).ifPresent(reservationService::offerNextOrRelease);
     }
+    @EventListener
+    public void onRentalRequestExpired(RentalRequestExpiredEvent e) {
+        bookRepository.findById(e.bookId()).ifPresent(reservationService::offerNextOrRelease);
+    }
 }
+

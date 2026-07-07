@@ -17,4 +17,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     boolean existsByBookIdAndUserIdAndStatusIn(UUID bookId, UUID userId, Collection<ReservationStatus> statuses);
 
     long countByBookIdAndStatusAndCreatedAtBefore(UUID bookId, ReservationStatus status, Instant createdAt);
+
+    List<Reservation> findByStatusAndOfferExpiresAtBefore(ReservationStatus status, Instant instant);
 }

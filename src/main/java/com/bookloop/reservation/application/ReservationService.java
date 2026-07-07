@@ -146,6 +146,29 @@ public class ReservationService {
                 });
     }
 
+    /**
+     * Vigia por tempo (item 4b): expira ofertas cujo prazo passou, notifica o
+     * interessado e passa a vez ao próximo da fila. Chamado pelo scheduler.
+     */
+    @Transactional
+    public void expireStaleOffers() {
+        List<Reservation> stale = reservationRepository
+                .findByStatusAndOfferExpiresAtBefore(ReservationStatus.OFFERED, Instant.now());
+        for (Reservation r : stale) {
+            r.expire();
+            notificationService.create(
+                    r.getUser().getId(), null, NotificationType.RESERVATION_EXPIRED,
+                    "Sua oferta de reserva expirou",
+                    "O prazo para pegar \"" + r.getBook().getTitle()
+                            + "\" acabou. Passamos a vez para o próximo da fila.",
+                    "RESERVATION", r.getId(), "/app/reservations");
+            offerNextOrRelease(r.getBook());
+        }
+        if (!stale.isEmpty()) {
+            log.info("Ofertas de reserva expiradas: {}", stale.size());
+        }
+    }
+
     private int positionOf(Reservation r) {
         if (r.getStatus() != ReservationStatus.WAITING) {
             return 0;

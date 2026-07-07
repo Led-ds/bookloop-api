@@ -6,6 +6,7 @@ import com.bookloop.rental.domain.RentalRepository;
 import com.bookloop.rental.domain.events.BookRentedEvent;
 import com.bookloop.rental.domain.events.BookReturnedEvent;
 import com.bookloop.rental.domain.events.RentalRejectedEvent;
+import com.bookloop.rental.domain.events.RentalRequestExpiredEvent;
 import com.bookloop.rental.domain.events.RentalRequestedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,4 +61,22 @@ public class NotificationEventListener {
                 r.getBook().getTitle() + " foi devolvido.",
                 "RENTAL", r.getId(), "/app/lendings"));
     }
+    @EventListener
+    public void onRentalRequestExpired(RentalRequestExpiredEvent e) {
+        rentalRepository.findById(e.rentalId()).ifPresent(r -> {
+            notificationService.create(
+                    r.getRenter().getId(), null, NotificationType.RENTAL_REQUEST_EXPIRED,
+                    "Solicitação encerrada",
+                    "O dono não respondeu a tempo; sua solicitação de " + r.getBook().getTitle()
+                            + " foi encerrada. Você pode solicitar novamente se quiser.",
+                    "RENTAL", r.getId(), "/app/rentals");
+            notificationService.create(
+                    r.getOwner().getId(), null, NotificationType.RENTAL_REQUEST_EXPIRED,
+                    "Solicitação encerrada por inatividade",
+                    "A solicitação de " + r.getRenter().getName() + " para " + r.getBook().getTitle()
+                            + " expirou por falta de resposta.",
+                    "RENTAL", r.getId(), "/app/lendings");
+        });
+    }
 }
+
