@@ -69,6 +69,10 @@ public class Book extends BaseEntity {
     @Column(name = "rating_count", nullable = false)
     private int ratingCount = 0;
 
+    /** Lock otimista: protege transições de estado do livro sob concorrência. */
+    @Version
+    private Long version;
+
     private Book(String title, String author, String isbn, Genre genre, String description,
                  BookCondition condition, String coverUrl, boolean isPublic, User owner) {
         this.title = title;

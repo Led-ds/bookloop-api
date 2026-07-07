@@ -35,6 +35,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleConflict(ConflictException ex) {
+        Map<String, String> data = ex.getCode() != null ? Map.of("code", ex.getCode()) : null;
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ApiResponse<>(false, ex.getMessage(), data, java.time.Instant.now()));
+    }
+
     @ExceptionHandler(ForbiddenOperationException.class)
     public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenOperationException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ex.getMessage()));
