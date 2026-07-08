@@ -13,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,6 +83,13 @@ public class GlobalExceptionHandler {
         // Violações de @Validated em parâmetros de path/query (ex.: @Min/@Size em @RequestParam).
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Parâmetros inválidos na requisição."));
+    }
+
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(Exception ex) {
+        // Rota/recurso inexistente: 404, não 500. (Antes caía no catch-all e virava 500.)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Recurso não encontrado."));
     }
 
     @ExceptionHandler(Exception.class)
