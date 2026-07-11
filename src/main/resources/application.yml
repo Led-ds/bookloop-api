@@ -62,10 +62,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: health      # expõe apenas /actuator/health
+        include: health      # expõe apenas /actuator/health (+ grupos liveness/readiness)
   endpoint:
     health:
-      show-details: never    # não vaza detalhes de componentes ao público
+      show-details: when-authorized   # público vê só o status; detalhes p/ quem tem credencial
+      probes:
+        enabled: true                 # habilita /actuator/health/liveness e /readiness
+      group:
+        # LIVENESS: "o processo está vivo?" NÃO depende do banco.
+        # É o que o App Runner deve chamar como health check — um soluço transitório
+        # do RDS não pode derrubar a instância num ciclo de restart.
+        liveness:
+          include: livenessState
+        # READINESS: "posso receber tráfego?" — aí sim inclui banco e migrations.
+        readiness:
+          include: readinessState, db, flyway
 
 logging:
   pattern:
