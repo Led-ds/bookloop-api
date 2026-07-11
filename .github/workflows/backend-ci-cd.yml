@@ -1,10 +1,10 @@
 name: Backend CI/CD
 
+# DESATIVADO como gatilho automático: a imagem do Docker Hub NÃO é consumida pelo
+# App Runner (que puxa do ECR). Mantido apenas como execução manual, para não
+# concorrer com o deploy de produção nem duplicar o 'mvn clean test' a cada push.
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: alexssilva/bookloop-api
