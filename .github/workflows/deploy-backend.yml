@@ -1,4 +1,9 @@
-name: deploy-backend.yml
+name: deploy-backend
+
+# CI roda em PR e push; CD (build+push da imagem) só em push/manual e SOMENTE se o CI passar.
+# O App Runner puxa a imagem automaticamente (AutoDeploymentsEnabled) — por isso NÃO há
+# mais 'start-deployment' aqui: ele concorreria com o auto-deploy e falhava com
+# "isn't in RUNNING state".
 on:
   push:
     branches: ["main"]
@@ -10,17 +15,11 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: bookloop-api
   ECR_REGISTRY: 817312833927.dkr.ecr.us-east-1.amazonaws.com
-  APP_RUNNER_SERVICE_ARN: arn:aws:apprunner:us-east-1:817312833927:service/bookloop-dev-backend/6d8cfab200c64d85a4c99528669e34e6
 
 jobs:
-  build-test-and-deploy:
-    name: Build, Test, Push ECR and Deploy
+  ci:
+    name: CI — build e testes
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -35,19 +34,28 @@ jobs:
       - name: Test backend
         run: mvn clean test
 
+  cd:
+    name: CD — build, push ECR (auto-deploy do App Runner)
+    runs-on: ubuntu-latest
+    needs: ci                                   # só publica imagem se o CI passar
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           docker build \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
@@ -55,15 +63,7 @@ jobs:
             .
 
       - name: Push Docker image to ECR
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
-
-      - name: Start App Runner deployment
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-          aws apprunner start-deployment \
-            --service-arn "$APP_RUNNER_SERVICE_ARN" \
-            --region "$AWS_REGION"
-          
+          echo "Imagem publicada. O App Runner fará o deploy automaticamente (AutoDeploymentsEnabled)."
