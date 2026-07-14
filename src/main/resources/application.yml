@@ -63,6 +63,13 @@ management:
     web:
       exposure:
         include: health      # expõe apenas /actuator/health (+ grupos liveness/readiness)
+  health:
+    # Desliga o MailHealthIndicator: ele abre uma conexão SMTP (Brevo:587) a cada
+    # consulta de /actuator/health. O App Runner não sai na porta 587, então a
+    # checagem pendura ~130s -> /actuator/health dá 502 e o health check do serviço
+    # reprova -> rollback. Desligar a CHECAGEM não afeta o ENVIO de e-mail.
+    mail:
+      enabled: false
   endpoint:
     health:
       show-details: when-authorized   # público vê só o status; detalhes p/ quem tem credencial
