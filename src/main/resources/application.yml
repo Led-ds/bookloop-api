@@ -81,9 +81,12 @@ management:
         # do RDS não pode derrubar a instância num ciclo de restart.
         liveness:
           include: livenessState
-        # READINESS: "posso receber tráfego?" — aí sim inclui banco e migrations.
+        # READINESS: "posso receber tráfego?" — inclui o estado da app e o banco.
+        # (não incluímos 'flyway': esse contribuidor não é registrado por padrão e
+        #  quebrava o boot com NoSuchHealthContributorException. O 'db' já cobre
+        #  "consigo falar com o banco", que é o que importa para readiness.)
         readiness:
-          include: readinessState, db, flyway
+          include: readinessState, db
 
 logging:
   pattern:
