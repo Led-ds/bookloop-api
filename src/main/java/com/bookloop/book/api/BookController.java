@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Tag(name = "Books", description = "Catálogo, cadastro e gestão de livros")
 @RestController
-@RequestMapping("/api/v1/books")
+@RequestMapping("/api/v1/orgs/{orgId}/books")
 @RequiredArgsConstructor
 public class BookController {
 
@@ -29,6 +29,7 @@ public class BookController {
     @Operation(summary = "Buscar livros no catálogo público (paginado e filtrável)")
     @GetMapping
     public ApiResponse<PageResponse<BookSummaryResponse>> search(
+            @PathVariable UUID orgId,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Genre genre,
             @RequestParam(required = false) BookStatus status,
@@ -38,20 +39,21 @@ public class BookController {
 
     @Operation(summary = "Detalhe de um livro + dados do dono")
     @GetMapping("/{id}")
-    public ApiResponse<BookResponse> getById(@PathVariable UUID id) {
+    public ApiResponse<BookResponse> getById(@PathVariable UUID orgId, @PathVariable UUID id) {
         return ApiResponse.ok(bookService.getById(id));
     }
 
     @Operation(summary = "Listar os livros do usuário autenticado")
     @GetMapping("/mine")
     public ApiResponse<PageResponse<BookSummaryResponse>> mine(
+            @PathVariable UUID orgId,
             @PageableDefault(size = 12, sort = "createdAt") Pageable pageable) {
         return ApiResponse.ok(bookService.listMine(CurrentUser.id(), pageable));
     }
 
     @Operation(summary = "Cadastrar um novo livro")
     @PostMapping
-    public ResponseEntity<ApiResponse<BookResponse>> create(@Valid @RequestBody CreateBookRequest req) {
+    public ResponseEntity<ApiResponse<BookResponse>> create(@PathVariable UUID orgId, @Valid @RequestBody CreateBookRequest req) {
         var created = bookService.create(CurrentUser.id(), req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(created, "Livro cadastrado."));
@@ -59,13 +61,13 @@ public class BookController {
 
     @Operation(summary = "Atualizar um livro (apenas o dono)")
     @PutMapping("/{id}")
-    public ApiResponse<BookResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateBookRequest req) {
+    public ApiResponse<BookResponse> update(@PathVariable UUID orgId, @PathVariable UUID id, @Valid @RequestBody UpdateBookRequest req) {
         return ApiResponse.ok(bookService.update(CurrentUser.id(), id, req), "Livro atualizado.");
     }
 
     @Operation(summary = "Remover um livro (apenas o dono)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID orgId, @PathVariable UUID id) {
         bookService.delete(CurrentUser.id(), id);
         return ResponseEntity.noContent().build();
     }
