@@ -71,6 +71,11 @@ public class AuthService {
 
     // BACKLOG (v1.2): persistir refresh tokens (tabela refresh_tokens) para permitir
     // revogação/rotação e logout server-side. Hoje o refresh é stateless (assinado por HMAC).
+    /** Exposto para fluxos que criam/autenticam usuário fora do login (ex.: aceite de convite). */
+    public AuthResponse issueTokensFor(User user) {
+        return issueTokens(user);
+    }
+
     private AuthResponse issueTokens(User user) {
         String access = jwtService.generateAccessToken(user.getEmail(), user.getRole().name());
         String refresh = jwtService.generateRefreshToken(user.getEmail());

@@ -18,6 +18,21 @@ public final class CurrentUser {
         return details;
     }
 
+    /** Id do usuário autenticado, ou null se a requisição for anônima (rotas públicas). */
+    public static UUID idOrNull() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()
+                || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return null;
+        }
+        try {
+            return id();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     public static UUID id() {
         return details().getId();
     }
