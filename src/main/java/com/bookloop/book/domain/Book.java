@@ -29,6 +29,9 @@ public class Book extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    private UUID organizationId;
+
     @Column(nullable = false, length = 200)
     private String title;
 
@@ -73,8 +76,9 @@ public class Book extends BaseEntity {
     @Version
     private Long version;
 
-    private Book(String title, String author, String isbn, Genre genre, String description,
+    private Book(UUID organizationId, String title, String author, String isbn, Genre genre, String description,
                  BookCondition condition, String coverUrl, boolean isPublic, User owner) {
+        this.organizationId = organizationId;
         this.title = title;
         this.author = author;
         this.isbn = isbn;
@@ -86,9 +90,25 @@ public class Book extends BaseEntity {
         this.owner = owner;
     }
 
+    /**
+     * Cria um livro dentro de uma comunidade (organization). Todo livro pertence
+     * a exatamente uma comunidade (organization_id NOT NULL).
+     */
+    public static Book createIn(UUID organizationId, String title, String author, String isbn, Genre genre,
+                                String description, BookCondition condition, String coverUrl,
+                                boolean isPublic, User owner) {
+        return new Book(organizationId, title, author, isbn, genre, description, condition, coverUrl, isPublic, owner);
+    }
+
+    /**
+     * @deprecated Fluxo pré-multi-tenant. Cria um livro SEM comunidade — só é
+     * válido no caminho legado (POST /api/v1/books), que será migrado para exigir
+     * organização. Não usar em código novo; prefira {@link #createIn}.
+     */
+    @Deprecated
     public static Book create(String title, String author, String isbn, Genre genre, String description,
                               BookCondition condition, String coverUrl, boolean isPublic, User owner) {
-        return new Book(title, author, isbn, genre, description, condition, coverUrl, isPublic, owner);
+        return new Book(null, title, author, isbn, genre, description, condition, coverUrl, isPublic, owner);
     }
 
     public void update(String title, String author, String isbn, Genre genre, String description,
