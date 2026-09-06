@@ -25,11 +25,11 @@ public class NotificationService {
 
     /** Cria e persiste uma notificação. Chamado pela camada de aplicação (listeners de eventos). */
     @Transactional
-    public Notification create(UUID recipientUserId, UUID actorUserId, NotificationType type,
+    public Notification create(UUID organizationId, UUID recipientUserId, UUID actorUserId, NotificationType type,
                                String title, String message,
                                String targetType, UUID targetId, String actionUrl) {
         Notification notification = Notification.create(
-                recipientUserId, actorUserId, type, title, message, targetType, targetId, actionUrl);
+                organizationId, recipientUserId, actorUserId, type, title, message, targetType, targetId, actionUrl);
         Notification saved = repository.save(notification);
         log.info("Notificação criada: id={} recipientId={} type={}", saved.getId(), recipientUserId, type);
         return saved;

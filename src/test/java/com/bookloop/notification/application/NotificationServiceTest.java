@@ -30,14 +30,14 @@ class NotificationServiceTest {
     private NotificationService service;
 
     private Notification ownedBy(UUID recipient) {
-        return Notification.create(recipient, null, NotificationType.SYSTEM,
+        return Notification.create(UUID.randomUUID(), recipient, null, NotificationType.SYSTEM,
                 "Título", "Mensagem", null, null, null);
     }
 
     @Test
     void createPersistsAndReturnsNotification() {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        Notification saved = service.create(UUID.randomUUID(), null, NotificationType.SYSTEM,
+        Notification saved = service.create(UUID.randomUUID(), UUID.randomUUID(), null, NotificationType.SYSTEM,
                 "t", "m", null, null, null);
         assertEquals(NotificationType.SYSTEM, saved.getType());
         verify(repository).save(any());

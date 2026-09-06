@@ -83,6 +83,9 @@ public class Review extends TenantEntity {
         if (comment != null && comment.length() > MAX_COMMENT) {
             throw new BusinessException("O comentário deve ter no máximo " + MAX_COMMENT + " caracteres.");
         }
+        if (rental == null || rental.getBook() == null) {
+            throw new BusinessException("Avaliação exige um aluguel válido.");
+        }
         assignOrganization(rental.getBook().getOrganizationId());
         this.rental = rental;
         this.author = author;
