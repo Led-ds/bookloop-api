@@ -1,6 +1,6 @@
 package com.bookloop.book.domain;
 
-import com.bookloop.shared.domain.BaseEntity;
+import com.bookloop.shared.domain.TenantEntity;
 import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.user.domain.User;
 import jakarta.persistence.*;
@@ -23,14 +23,11 @@ import java.util.UUID;
         @Index(name = "idx_books_genre", columnList = "genre")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Book extends BaseEntity {
+public class Book extends TenantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
-    @Column(name = "organization_id", nullable = false, updatable = false)
-    private UUID organizationId;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -78,7 +75,7 @@ public class Book extends BaseEntity {
 
     private Book(UUID organizationId, String title, String author, String isbn, Genre genre, String description,
                  BookCondition condition, String coverUrl, boolean isPublic, User owner) {
-        this.organizationId = organizationId;
+        assignOrganization(organizationId);
         this.title = title;
         this.author = author;
         this.isbn = isbn;
