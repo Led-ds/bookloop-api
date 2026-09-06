@@ -32,6 +32,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRentalRequested(RentalRequestedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getOwner().getId(), r.getRenter().getId(), NotificationType.RENTAL_REQUESTED,
                 "Nova solicitação de empréstimo",
                 r.getRenter().getName() + " solicitou o empréstimo de " + r.getBook().getTitle() + ".",
@@ -41,6 +42,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRentalApproved(BookRentedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENTAL_APPROVED,
                 "Empréstimo aprovado",
                 r.getOwner().getName() + " aprovou seu empréstimo de " + r.getBook().getTitle() + ".",
@@ -50,6 +52,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRentalRejected(RentalRejectedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENTAL_REJECTED,
                 "Solicitação recusada",
                 r.getOwner().getName() + " recusou sua solicitação de " + r.getBook().getTitle() + ".",
@@ -59,6 +62,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRentalReturned(BookReturnedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENTAL_RETURNED,
                 "Devolução confirmada",
                 r.getBook().getTitle() + " foi confirmado como devolvido.",
@@ -68,6 +72,7 @@ public class NotificationEventListener {
     @EventListener
     public void onReturnRequested(ReturnRequestedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getOwner().getId(), r.getRenter().getId(), NotificationType.RENTAL_RETURNED,
                 "Devolução aguardando confirmação",
                 r.getRenter().getName() + " marcou a devolução de " + r.getBook().getTitle()
@@ -78,12 +83,14 @@ public class NotificationEventListener {
     public void onRentalRequestExpired(RentalRequestExpiredEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> {
             notificationService.create(
+                r.getOrganizationId(),
                     r.getRenter().getId(), null, NotificationType.RENTAL_REQUEST_EXPIRED,
                     "Solicitação encerrada",
                     "O dono não respondeu a tempo; sua solicitação de " + r.getBook().getTitle()
                             + " foi encerrada. Você pode solicitar novamente se quiser.",
                     "RENTAL", r.getId(), "/app/rentals");
             notificationService.create(
+                r.getOrganizationId(),
                     r.getOwner().getId(), null, NotificationType.RENTAL_REQUEST_EXPIRED,
                     "Solicitação encerrada por inatividade",
                     "A solicitação de " + r.getRenter().getName() + " para " + r.getBook().getTitle()
@@ -94,6 +101,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRenewalRequested(RenewalRequestedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getOwner().getId(), r.getRenter().getId(), NotificationType.RENEWAL_REQUESTED,
                 "Pedido de renovação",
                 r.getRenter().getName() + " pediu para renovar " + r.getBook().getTitle()
@@ -104,6 +112,7 @@ public class NotificationEventListener {
     @EventListener
     public void onRenewalResolved(RenewalResolvedEvent e) {
         rentalRepository.findById(e.rentalId()).ifPresent(r -> notificationService.create(
+                r.getOrganizationId(),
                 r.getRenter().getId(), r.getOwner().getId(), NotificationType.RENEWAL_UPDATED,
                 e.approved() ? "Renovação aprovada" : "Renovação rejeitada",
                 e.approved()

@@ -130,6 +130,7 @@ public class ReservationService {
                     book.markReserved();
                     next.offer(Instant.now().plus(Reservation.OFFER_TTL_HOURS, ChronoUnit.HOURS));
                     notificationService.create(
+                            next.getOrganizationId(),
                             next.getUser().getId(), null, NotificationType.RESERVATION_OFFERED,
                             "O livro está disponível para você!",
                             "\"" + book.getTitle() + "\" foi reservado para você. Você tem "
@@ -157,6 +158,7 @@ public class ReservationService {
         for (Reservation r : stale) {
             r.expire();
             notificationService.create(
+                    r.getOrganizationId(),
                     r.getUser().getId(), null, NotificationType.RESERVATION_EXPIRED,
                     "Sua oferta de reserva expirou",
                     "O prazo para pegar \"" + r.getBook().getTitle()

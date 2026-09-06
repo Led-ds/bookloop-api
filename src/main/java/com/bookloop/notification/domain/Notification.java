@@ -1,6 +1,6 @@
 package com.bookloop.notification.domain;
 
-import com.bookloop.shared.domain.BaseEntity;
+import com.bookloop.shared.domain.TenantEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +22,7 @@ import java.util.UUID;
         @Index(name = "idx_notifications_recipient_read", columnList = "recipient_user_id, is_read")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Notification extends BaseEntity {
+public class Notification extends TenantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -59,10 +59,11 @@ public class Notification extends BaseEntity {
     @Column(name = "read_at")
     private Instant readAt;
 
-    public static Notification create(UUID recipientUserId, UUID actorUserId, NotificationType type,
+    public static Notification create(UUID organizationId, UUID recipientUserId, UUID actorUserId, NotificationType type,
                                       String title, String message,
                                       String targetType, UUID targetId, String actionUrl) {
         Notification n = new Notification();
+        n.assignOrganization(organizationId);
         n.recipientUserId = recipientUserId;
         n.actorUserId = actorUserId;
         n.type = type;

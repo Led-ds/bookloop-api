@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NotificationTest {
 
     private Notification sample(UUID recipient) {
-        return Notification.create(recipient, null, NotificationType.SYSTEM,
+        return Notification.create(UUID.randomUUID(), recipient, null, NotificationType.SYSTEM,
                 "Título", "Mensagem", null, null, null);
     }
 
