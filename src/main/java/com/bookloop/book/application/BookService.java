@@ -1,6 +1,7 @@
 package com.bookloop.book.application;
 
 import com.bookloop.book.domain.*;
+import com.bookloop.organization.application.OrganizationContext;
 import com.bookloop.shared.application.PageResponse;
 import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.shared.exception.ForbiddenOperationException;
@@ -28,7 +29,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public PageResponse<BookSummaryResponse> search(String term, Genre genre, BookStatus status, Pageable pageable) {
         Specification<Book> spec = Specification
-                .where(BookSpecifications.publiclyVisible())
+                .where(BookSpecifications.inOrganization(OrganizationContext.id()))
                 .and(BookSpecifications.titleOrAuthorContains(term))
                 .and(BookSpecifications.hasGenre(genre))
                 .and(BookSpecifications.hasStatus(status));
@@ -37,7 +38,9 @@ public class BookService {
 
     @Transactional(readOnly = true)
     public PageResponse<BookSummaryResponse> listMine(UUID ownerId, Pageable pageable) {
-        Specification<Book> spec = Specification.where(BookSpecifications.ownedBy(ownerId));
+        Specification<Book> spec = Specification
+                .where(BookSpecifications.inOrganization(OrganizationContext.id()))
+                .and(BookSpecifications.ownedBy(ownerId));
         return PageResponse.from(bookRepository.findAll(spec, pageable).map(bookMapper::toSummary));
     }
 
@@ -50,7 +53,7 @@ public class BookService {
     public BookResponse create(UUID ownerId, CreateBookRequest req) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", ownerId));
-        Book book = Book.create(req.title(), req.author(), req.isbn(), req.genre(),
+        Book book = Book.createIn(OrganizationContext.id(), req.title(), req.author(), req.isbn(), req.genre(),
                 req.description(), req.condition(), req.coverUrl(), req.isPublic(), owner);
         Book saved = bookRepository.save(book);
         log.info("Livro cadastrado: bookId={} ownerId={}", saved.getId(), ownerId);
@@ -80,8 +83,13 @@ public class BookService {
     }
 
     private Book load(UUID id) {
-        return bookRepository.findById(id)
+        Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Livro", id));
+        // Isolamento: um livro de outra comunidade não existe para este contexto.
+        if (!book.getOrganizationId().equals(OrganizationContext.id())) {
+            throw new ResourceNotFoundException("Livro", id);
+        }
+        return book;
     }
 
     private Book loadOwned(UUID ownerId, UUID bookId) {

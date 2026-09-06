@@ -53,4 +53,9 @@ public final class BookSpecifications {
         if (ownerId == null) return null;
         return (root, q, cb) -> cb.equal(root.get("owner").get("id"), ownerId);
     }
+
+    /** Isolamento multi-tenant: só livros da comunidade informada. */
+    public static Specification<Book> inOrganization(UUID organizationId) {
+        return (root, q, cb) -> cb.equal(root.get("organizationId"), organizationId);
+    }
 }

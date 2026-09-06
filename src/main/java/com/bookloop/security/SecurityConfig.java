@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -64,8 +63,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(restAccessDeniedHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC).permitAll()
-                        // public catalog browsing of books is open
-                        .requestMatchers(HttpMethod.GET, "/api/v1/books/**").permitAll()
+                        // Livros agora são privados por comunidade: /orgs/{orgId}/books
+                        // exige autenticação + membership (validado no OrganizationInterceptor).
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
