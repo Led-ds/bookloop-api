@@ -26,6 +26,7 @@ import java.util.UUID;
 public class OrganizationInterceptor implements HandlerInterceptor {
 
     private final MembershipRepository membershipRepository;
+    private final com.bookloop.shared.tenant.TenantFilterActivator tenantFilter;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -45,12 +46,14 @@ public class OrganizationInterceptor implements HandlerInterceptor {
                 .orElseThrow(() -> new ResourceNotFoundException("Comunidade", orgId));
 
         OrganizationContext.set(orgId, m.getRole());
+        tenantFilter.enable(orgId);
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception ex) {
+        tenantFilter.disable();
         OrganizationContext.clear();
     }
 
