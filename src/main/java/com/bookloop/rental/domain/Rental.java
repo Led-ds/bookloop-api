@@ -1,7 +1,7 @@
 package com.bookloop.rental.domain;
 
 import com.bookloop.book.domain.Book;
-import com.bookloop.shared.domain.BaseEntity;
+import com.bookloop.shared.domain.TenantEntity;
 import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.user.domain.User;
 import jakarta.persistence.*;
@@ -29,7 +29,7 @@ import java.util.UUID;
         @Index(name = "idx_rentals_status", columnList = "status")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Rental extends BaseEntity {
+public class Rental extends TenantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -99,6 +99,7 @@ public class Rental extends BaseEntity {
         if (!renter.canRequestRentals()) {
             throw new BusinessException("Sua conta possui penalidades que impedem novas solicitações.");
         }
+        assignOrganization(book.getOrganizationId());
         this.book = book;
         this.renter = renter;
         this.owner = owner;

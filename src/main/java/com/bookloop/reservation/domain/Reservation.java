@@ -1,7 +1,7 @@
 package com.bookloop.reservation.domain;
 
 import com.bookloop.book.domain.Book;
-import com.bookloop.shared.domain.BaseEntity;
+import com.bookloop.shared.domain.TenantEntity;
 import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.user.domain.User;
 import jakarta.persistence.*;
@@ -25,7 +25,7 @@ import java.util.UUID;
         @Index(name = "idx_reservations_status", columnList = "status")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Reservation extends BaseEntity {
+public class Reservation extends TenantEntity {
 
     /** Janela para o interessado aceitar a oferta antes de passar a vez. */
     public static final long OFFER_TTL_HOURS = 48;
@@ -50,6 +50,7 @@ public class Reservation extends BaseEntity {
     private Instant offerExpiresAt;
 
     private Reservation(Book book, User user) {
+        assignOrganization(book.getOrganizationId());
         this.book = book;
         this.user = user;
         this.status = ReservationStatus.WAITING;
