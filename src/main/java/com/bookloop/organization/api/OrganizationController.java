@@ -36,4 +36,13 @@ public class OrganizationController {
     public ApiResponse<List<OrganizationResponse>> mine() {
         return ApiResponse.ok(organizationService.listMine(CurrentUser.id()));
     }
+
+    @Operation(summary = "Detalhe de uma comunidade (somente membros). "
+            + "Rota escopada: valida membership via OrganizationInterceptor.")
+    @GetMapping("/orgs/{orgId}")
+    public ApiResponse<OrganizationResponse> getScoped(@org.springframework.web.bind.annotation.PathVariable java.util.UUID orgId) {
+        // O interceptor já validou o membership e populou o contexto.
+        // orgId no path == OrganizationContext.id(); usamos o serviço para montar a resposta.
+        return ApiResponse.ok(organizationService.getForCurrentMember());
+    }
 }

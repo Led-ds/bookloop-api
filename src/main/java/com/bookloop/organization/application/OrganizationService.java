@@ -69,6 +69,15 @@ public class OrganizationService {
                 .toList();
     }
 
+    /** Detalhe da comunidade ATIVA no contexto da requisição (rota /orgs/{orgId}). */
+    @Transactional(readOnly = true)
+    public OrganizationResponse getForCurrentMember() {
+        UUID orgId = OrganizationContext.id();
+        Organization org = organizationRepository.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comunidade", orgId));
+        return toResponse(org, OrganizationContext.role().name());
+    }
+
     private OrganizationResponse toResponse(Organization o, String myRole) {
         return new OrganizationResponse(
                 o.getId(), o.getCode(), o.getName(), o.getDescription(), o.getAvatarUrl(),
