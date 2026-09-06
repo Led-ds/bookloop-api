@@ -2,7 +2,7 @@ package com.bookloop.review.domain;
 
 import com.bookloop.book.domain.Book;
 import com.bookloop.rental.domain.Rental;
-import com.bookloop.shared.domain.BaseEntity;
+import com.bookloop.shared.domain.TenantEntity;
 import com.bookloop.shared.exception.BusinessException;
 import com.bookloop.user.domain.User;
 import jakarta.persistence.*;
@@ -25,7 +25,7 @@ import java.util.UUID;
         @Index(name = "idx_reviews_author", columnList = "author_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Review extends BaseEntity {
+public class Review extends TenantEntity {
 
     public static final int MAX_COMMENT = 150;
 
@@ -83,6 +83,7 @@ public class Review extends BaseEntity {
         if (comment != null && comment.length() > MAX_COMMENT) {
             throw new BusinessException("O comentário deve ter no máximo " + MAX_COMMENT + " caracteres.");
         }
+        assignOrganization(rental.getBook().getOrganizationId());
         this.rental = rental;
         this.author = author;
         this.reviewType = type;

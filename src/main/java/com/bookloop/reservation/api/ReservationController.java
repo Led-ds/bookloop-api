@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Tag(name = "Reservations", description = "Fila de reserva de livros")
 @RestController
-@RequestMapping("/api/v1/reservations")
+@RequestMapping("/api/v1/orgs/{orgId}/reservations")
 @RequiredArgsConstructor
 public class ReservationController {
 
@@ -26,32 +26,32 @@ public class ReservationController {
 
     @Operation(summary = "Entrar na fila de reserva de um livro")
     @PostMapping
-    public ResponseEntity<ApiResponse<ReservationResponse>> create(@Valid @RequestBody CreateReservationRequest req) {
+    public ResponseEntity<ApiResponse<ReservationResponse>> create(@PathVariable java.util.UUID orgId, @Valid @RequestBody CreateReservationRequest req) {
         var r = reservationService.create(CurrentUser.id(), req.bookId());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(r, "Você entrou na fila."));
     }
 
     @Operation(summary = "Minhas reservas")
     @GetMapping("/mine")
-    public ApiResponse<List<ReservationResponse>> mine() {
+    public ApiResponse<List<ReservationResponse>> mine(@PathVariable java.util.UUID orgId) {
         return ApiResponse.ok(reservationService.mine(CurrentUser.id()));
     }
 
     @Operation(summary = "Aceitar a oferta (gera uma solicitação de aluguel ao dono)")
     @PostMapping("/{id}/accept")
-    public ApiResponse<ReservationResponse> accept(@PathVariable UUID id) {
+    public ApiResponse<ReservationResponse> accept(@PathVariable java.util.UUID orgId, @PathVariable UUID id) {
         return ApiResponse.ok(reservationService.accept(CurrentUser.id(), id), "Reserva aceita.");
     }
 
     @Operation(summary = "Recusar a oferta (passa a vez ao próximo da fila)")
     @PostMapping("/{id}/decline")
-    public ApiResponse<ReservationResponse> decline(@PathVariable UUID id) {
+    public ApiResponse<ReservationResponse> decline(@PathVariable java.util.UUID orgId, @PathVariable UUID id) {
         return ApiResponse.ok(reservationService.decline(CurrentUser.id(), id), "Você recusou a oferta.");
     }
 
     @Operation(summary = "Sair da fila")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> leave(@PathVariable UUID id) {
+    public ApiResponse<Void> leave(@PathVariable java.util.UUID orgId, @PathVariable UUID id) {
         reservationService.leave(CurrentUser.id(), id);
         return ApiResponse.<Void>ok(null, "Você saiu da fila.");
     }

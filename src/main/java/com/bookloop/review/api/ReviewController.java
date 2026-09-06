@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Tag(name = "Reviews", description = "Avaliações de livros e de pessoas (após devolução)")
 @RestController
-@RequestMapping("/api/v1/reviews")
+@RequestMapping("/api/v1/orgs/{orgId}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
@@ -28,7 +28,7 @@ public class ReviewController {
 
     @Operation(summary = "Criar avaliação (1..5 estrelas + comentário até 150 caracteres)")
     @PostMapping
-    public ResponseEntity<ApiResponse<ReviewResponse>> create(@Valid @RequestBody CreateReviewRequest req) {
+    public ResponseEntity<ApiResponse<ReviewResponse>> create(@PathVariable java.util.UUID orgId, @Valid @RequestBody CreateReviewRequest req) {
         var created = reviewService.create(CurrentUser.id(), req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(created, "Avaliação registrada. Obrigado por fortalecer a confiança da comunidade."));
@@ -36,14 +36,14 @@ public class ReviewController {
 
     @Operation(summary = "Editar a própria avaliação")
     @PutMapping("/{id}")
-    public ApiResponse<ReviewResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateReviewRequest req) {
+    public ApiResponse<ReviewResponse> update(@PathVariable java.util.UUID orgId, @PathVariable UUID id, @Valid @RequestBody UpdateReviewRequest req) {
         return ApiResponse.ok(reviewService.update(CurrentUser.id(), id, req.rating(), req.comment()),
                 "Avaliação atualizada.");
     }
 
     @Operation(summary = "O que ainda posso avaliar (aluguéis devolvidos)")
     @GetMapping("/pending")
-    public ApiResponse<List<PendingReviewResponse>> pending() {
+    public ApiResponse<List<PendingReviewResponse>> pending(@PathVariable java.util.UUID orgId) {
         return ApiResponse.ok(reviewService.pending(CurrentUser.id()));
     }
 }
